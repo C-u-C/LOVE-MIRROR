@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>恋爱镜像 · 人格测试</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    :root {
+      --bg:      #04000e;
+      --rose:    #e8a0b8;
+      --gold:    #d4a85e;
+      --purple:  #b07ad4;
+      --teal:    #7adac8;
+      --text:    #f0eaff;
+      --muted:   rgba(240, 234, 255, 0.5);
+      --border:  rgba(180, 130, 220, 0.16);
+      --border2: rgba(180, 130, 220, 0.38);
+      --glass:   rgba(18, 6, 40, 0.55);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ══════════════════════════════════════
+       ANIMATED AURORA BACKGROUND
+    ══════════════════════════════════════ */
+    .aurora {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      overflow: hidden;
+    }
+    .aurora::before {
+      content: '';
+      position: absolute; inset: -20%;
+      background:
+        radial-gradient(ellipse 70% 55% at 25% 25%, rgba(130, 30, 200, 0.28) 0%, transparent 65%),
+        radial-gradient(ellipse 55% 45% at 75% 75%, rgba(210, 55, 115, 0.2)  0%, transparent 65%),
+        radial-gradient(ellipse 45% 35% at 60% 15%, rgba(40,  140, 200, 0.14) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 10% 80%, rgba(100, 200, 180, 0.1)  0%, transparent 60%);
+      animation: auroraFlow 18s ease-in-out infinite alternate;
+    }
+    .aurora::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      opacity: 0.6;
+    }
+    @keyframes auroraFlow {
+      0%   { transform: scale(1)    rotate(0deg);   filter: hue-rotate(0deg); }
+      40%  { transform: scale(1.06) rotate(3deg);   filter: hue-rotate(20deg); }
+      100% { transform: scale(0.97) rotate(-2deg);  filter: hue-rotate(-15deg); }
+    }
+
+    /* ══════════════════════════════════════
+       PAGE SYSTEM
+    ══════════════════════════════════════ */
+    .page { display: none; min-height: 100vh; }
+    .page.active { display: flex; flex-direction: column; }
+
+    /* ══════════════════════════════════════
+       START PAGE
+    ══════════════════════════════════════ */
+    #page-start {
+      align-items: center;
+      justify-content: center;
+      padding: 48px 20px;
+      position: relative;
+    }
+
+    .start-inner {
+      position: relative; z-index: 1;
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+    }
+
+    /* Mirror frame wrapper */
+    .mirror-frame {
+      position: relative;
+      padding: 44px 36px 36px;
+      background: var(--glass);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-radius: 12px;
+      border: 1px solid rgba(200, 160, 255, 0.18);
+    }
+    /* shimmer sweep */
+    .mirror-frame::before {
+      content: '';
+      position: absolute; inset: 0;
+      border-radius: 12px;
+      background: linear-gradient(
+        108deg,
+        transparent 30%,
+        rgba(255,255,255,0.035) 50%,
+        transparent 70%
+      );
+      background-size: 200% 200%;
+      animation: mirrorShimmer 6s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @keyframes mirrorShimmer {
+      0%   { background-position: -100% 0; }
+      100% { background-position: 200%  0; }
+    }
+    /* corner ornaments */
+    .mirror-frame::after {
+      content: '';
+      position: absolute;
+      inset: 7px;
+      border-radius: 8px;
+      border: 1px solid rgba(200,160,255,0.09);
+      pointer-events: none;
+    }
+    .corner { position: absolute; width: 18px; height: 18px; }
+    .corner::before, .corner::after {
+      content: '';
+      position: absolute;
+      background: rgba(200,160,255,0.45);
+    }
+    .corner::before { width: 100%; height: 1px; top: 0; left: 0; }
+    .corner::after  { width: 1px; height: 100%; top: 0; left: 0; }
+    .c-tl { top: -1px;  left: -1px; }
+    .c-tr { top: -1px;  right: -1px;  transform: scaleX(-1); }
+    .c-bl { bottom: -1px; left: -1px; transform: scaleY(-1); }
+    .c-br { bottom: -1px; right: -1px; transform: scale(-1); }
+
+    .eyemark {
+      font-size: 20px;
+      letter-spacing: 6px;
+      color: rgba(180,130,220,0.6);
+      margin-bottom: 20px;
+      display: block;
+    }
+
+    .site-title {
+      font-family: 'Songti SC', 'SimSun', 'STSong', serif;
+      font-size: clamp(38px, 9vw, 62px);
+      font-weight: 300;
+      line-height: 1.15;
+      background: linear-gradient(135deg, #f8f0ff 0%, #e8a0c8 30%, #c090e8 60%, #a8d8f0 85%, #f0e8ff 100%);
+      background-size: 300% 300%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: prism 10s ease-in-out infinite;
+      margin-bottom: 8px;
+    }
+    @keyframes prism {
+      0%   { background-position:   0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position:   0% 50%; }
+    }
+
+    .site-sub {
+      font-size: 13px;
+      color: var(--muted);
+      letter-spacing: 3px;
+      margin-bottom: 28px;
+    }
+
+    .divider {
+      width: 60px; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(200,160,255,0.5), transparent);
+      margin: 0 auto 26px;
+    }
+
+    .intro-text {
+      font-size: 14px;
+      line-height: 1.95;
+      color: rgba(240, 232, 255, 0.68);
+      margin-bottom: 14px;
+    }
+
+    .theory-tags {
+      display: flex; flex-wrap: wrap; gap: 7px;
+      justify-content: center;
+      margin: 20px 0 32px;
+    }
+    .theory-tag {
+      font-size: 11px;
+      padding: 3px 11px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      color: rgba(200,180,240,0.55);
+      letter-spacing: 0.5px;
+    }
+
+    .btn-start {
+      display: inline-block;
+      padding: 14px 50px;
+      background: linear-gradient(135deg, rgba(170,70,130,0.35), rgba(110,45,175,0.35));
+      border: 1px solid rgba(232,160,190,0.38);
+      border-radius: 50px;
+      color: var(--text);
+      font-size: 15px;
+      letter-spacing: 4px;
+      cursor: pointer;
+      transition: all 0.32s ease;
+      position: relative; overflow: hidden;
+    }
+    .btn-start::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(232,160,190,0.12), rgba(170,120,230,0.12));
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .btn-start:hover::after { opacity: 1; }
+    .btn-start:hover {
+      border-color: rgba(232,160,190,0.65);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(160,70,130,0.28);
+    }
+
+    .start-meta {
+      margin-top: 18px;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      font-size: 11px;
+      color: rgba(200,180,240,0.38);
+      letter-spacing: 1px;
+    }
+    .start-meta span::before { content: '· '; }
+
+    /* author line */
+    .author-line {
+      position: absolute;
+      bottom: 24px;
+      left: 0; right: 0;
+      text-align: center;
+      font-size: 11px;
+      color: rgba(200,180,240,0.28);
+      letter-spacing: 3px;
+      z-index: 1;
+    }
+
+    /* ══════════════════════════════════════
+       QUESTION PAGE
+    ══════════════════════════════════════ */
+    #page-quiz { padding: 0; position: relative; }
+
+    .quiz-header {
+      position: relative; z-index: 1;
+      padding: 22px 24px 0;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      max-width: 640px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .progress-bar-wrap {
+      flex: 1; height: 2px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 2px; overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--rose), var(--purple), var(--teal));
+      border-radius: 2px;
+      transition: width 0.42s cubic-bezier(.4,0,.2,1);
+    }
+    .progress-num {
+      font-size: 11px; color: var(--muted);
+      white-space: nowrap; min-width: 40px; text-align: right;
+    }
+
+    .quiz-body {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 28px 20px 48px;
+      position: relative; z-index: 1;
+    }
+
+    .question-card {
+      width: 100%; max-width: 600px;
+      animation: fadeUp 0.32s cubic-bezier(.4,0,.2,1);
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .question-num {
+      font-size: 10px; letter-spacing: 4px;
+      color: var(--rose); margin-bottom: 14px; opacity: 0.75;
+    }
+
+    .question-text {
+      font-family: 'Songti SC', 'SimSun', 'STSong', serif;
+      font-size: clamp(17px, 4.2vw, 21px);
+      font-weight: 400; line-height: 1.7;
+      margin-bottom: 26px; color: var(--text);
+    }
+
+    .options-list { display: flex; flex-direction: column; gap: 11px; }
+
+    .option-btn {
+      width: 100%; padding: 15px 18px;
+      background: var(--glass);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: rgba(240,234,255,0.8);
+      font-size: 14px; line-height: 1.65;
+      text-align: left; cursor: pointer;
+      transition: all 0.22s ease;
+      position: relative; overflow: hidden;
+    }
+    .option-btn::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(120deg, rgba(232,160,190,0.08), rgba(170,120,230,0.08));
+      opacity: 0; transition: opacity 0.22s;
+    }
+    .option-btn:hover::before { opacity: 1; }
+    .option-btn:hover {
+      border-color: rgba(200,150,240,0.4);
+      color: var(--text);
+      transform: translateX(5px);
+    }
+    .option-btn.selected {
+      border-color: rgba(220,160,200,0.6);
+      background: rgba(200,130,180,0.14);
+      color: var(--text);
+    }
+    .option-inner { display: flex; align-items: flex-start; }
+    .option-letter {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 21px; height: 21px; border-radius: 50%;
+      font-size: 10px; border: 1px solid var(--border2);
+      margin-right: 12px; flex-shrink: 0; margin-top: 1px;
+      color: rgba(180,140,220,0.8);
+    }
+
+    /* Back button */
+    .quiz-nav {
+      display: flex; justify-content: flex-start;
+      max-width: 600px; width: 100%;
+      margin-top: 20px;
+    }
+    .btn-back {
+      background: none; border: none;
+      color: var(--muted); font-size: 12px;
+      letter-spacing: 2px; cursor: pointer;
+      padding: 6px 0;
+      display: flex; align-items: center; gap: 6px;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s, color 0.2s;
+    }
+    .btn-back.visible { opacity: 1; pointer-events: all; }
+    .btn-back:hover { color: var(--text); }
+    .btn-back-arrow { font-size: 14px; }
+
+    /* ══════════════════════════════════════
+       RESULT PAGE
+    ══════════════════════════════════════ */
+    #page-result { min-height: 100vh; padding: 0 0 64px; position: relative; }
+
+    .result-header {
+      text-align: center; padding: 44px 24px 22px;
+      position: relative; z-index: 1;
+    }
+    .result-eyebrow {
+      font-size: 10px; letter-spacing: 5px;
+      color: rgba(180,140,220,0.6); margin-bottom: 12px;
+    }
+    .result-title {
+      font-family: 'Songti SC', 'SimSun', 'STSong', serif;
+      font-size: clamp(22px, 5.5vw, 34px);
+      font-weight: 300;
+      background: linear-gradient(135deg, var(--text), var(--rose));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.4;
+    }
+    .result-sub {
+      font-size: 12px; color: var(--muted);
+      margin-top: 10px; letter-spacing: 1px;
+    }
+
+    .result-cards {
+      max-width: 860px; margin: 0 auto;
+      padding: 0 20px;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 22px; position: relative; z-index: 1;
+    }
+    @media (max-width: 640px) { .result-cards { grid-template-columns: 1fr; } }
+
+    .type-card {
+      border-radius: 14px; padding: 26px 22px;
+      position: relative; overflow: hidden;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+    .type-card.light-card {
+      background: linear-gradient(150deg, rgba(34,10,20,0.82), rgba(28,8,24,0.88));
+      border: 1px solid rgba(212,168,94,0.22);
+    }
+    .type-card.dark-card {
+      background: linear-gradient(150deg, rgba(8,10,26,0.85), rgba(12,8,28,0.9));
+      border: 1px solid rgba(140,90,210,0.22);
+    }
+    /* iridescent edge glow */
+    .type-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      opacity: 0.5;
+    }
+    .light-card::before {
+      background: linear-gradient(90deg, transparent, rgba(212,168,94,0.6), rgba(232,160,190,0.4), transparent);
+    }
+    .dark-card::before {
+      background: linear-gradient(90deg, transparent, rgba(140,90,210,0.6), rgba(100,200,220,0.3), transparent);
+    }
+
+    .card-face {
+      font-size: 10px; letter-spacing: 3px;
+      margin-bottom: 14px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .light-card .card-face { color: rgba(212,168,94,0.8); }
+    .dark-card  .card-face { color: rgba(160,120,220,0.8); }
+    .card-face::after {
+      content: ''; flex: 1; height: 1px;
+    }
+    .light-card .card-face::after { background: linear-gradient(90deg, rgba(212,168,94,0.35), transparent); }
+    .dark-card  .card-face::after { background: linear-gradient(90deg, rgba(140,90,210,0.35), transparent); }
+
+    .type-icon { font-size: 30px; margin-bottom: 10px; }
+    .type-name {
+      font-family: 'Songti SC', 'SimSun', 'STSong', serif;
+      font-size: clamp(19px, 3.8vw, 24px);
+      font-weight: 400; margin-bottom: 6px;
+    }
+    .light-card .type-name { color: #f8ddc0; }
+    .dark-card  .type-name { color: #c8b4f0; }
+
+    .type-tagline {
+      font-size: 11px; color: var(--muted);
+      letter-spacing: 0.5px;
+      margin-bottom: 16px; padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      font-style: italic;
+    }
+    .type-desc {
+      font-size: 13.5px; line-height: 1.88;
+      color: rgba(240,234,255,0.75); margin-bottom: 18px;
+    }
+    .insight-block {
+      background: rgba(0,0,0,0.18);
+      border-radius: 8px; padding: 12px 14px;
+      margin-bottom: 10px; border-left: 2px solid;
+    }
+    .light-card .insight-block { border-color: rgba(212,168,94,0.45); }
+    .dark-card  .insight-block { border-color: rgba(140,90,210,0.45); }
+    .insight-label {
+      font-size: 9.5px; letter-spacing: 2.5px;
+      margin-bottom: 5px; text-transform: uppercase;
+    }
+    .light-card .insight-label { color: rgba(212,168,94,0.85); }
+    .dark-card  .insight-label { color: rgba(160,120,220,0.85); }
+    .insight-text {
+      font-size: 12.5px; line-height: 1.78;
+      color: rgba(240,234,255,0.65);
+    }
+
+    /* ══════════════════════════════════════
+       RESULT ACTIONS
+    ══════════════════════════════════════ */
+    .result-actions {
+      max-width: 860px; margin: 30px auto 0;
+      padding: 0 20px;
+      display: flex; gap: 12px; justify-content: center;
+      position: relative; z-index: 1;
+    }
+    .btn-save, .btn-restart {
+      padding: 12px 34px; border-radius: 50px;
+      font-size: 13px; letter-spacing: 2px;
+      cursor: pointer; transition: all 0.28s ease;
+    }
+    .btn-save {
+      background: linear-gradient(135deg, rgba(212,168,94,0.22), rgba(232,160,180,0.22));
+      border: 1px solid rgba(212,168,94,0.42);
+      color: #f8ddc0;
+    }
+    .btn-save:hover {
+      background: linear-gradient(135deg, rgba(212,168,94,0.38), rgba(232,160,180,0.38));
+      box-shadow: 0 6px 24px rgba(212,168,94,0.18);
+      transform: translateY(-2px);
+    }
+    .btn-restart {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .btn-restart:hover { border-color: var(--border2); color: var(--text); }
+
+    /* ══════════════════════════════════════
+       CAPTURE ZONE
+    ══════════════════════════════════════ */
+    #capture-wrap { background: #04000e; padding: 36px 20px; }
+    .capture-logo { text-align: center; margin-bottom: 28px; }
+    .capture-logo-title {
+      font-family: 'Songti SC', 'SimSun', serif;
+      font-size: 22px; font-weight: 300;
+      background: linear-gradient(135deg, var(--text), var(--rose));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .capture-logo-sub {
+      font-size: 10px; color: var(--muted);
+      letter-spacing: 4px; margin-top: 4px;
+    }
+
+    /* ══════════════════════════════════════
+       SAVING OVERLAY
+    ══════════════════════════════════════ */
+    .saving-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(4,0,14,0.88); z-index: 9999;
+      align-items: center; justify-content: center;
+      flex-direction: column; gap: 14px;
+    }
+    .saving-overlay.active { display: flex; }
+    .saving-spin {
+      width: 38px; height: 38px;
+      border: 2px solid var(--border);
+      border-top-color: var(--rose);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .saving-text { font-size: 12px; color: var(--muted); letter-spacing: 3px; }
+
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(180,130,220,0.25); border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<div class="aurora"></div>
+
+<!-- ════════════════════════════════
+     START PAGE
+════════════════════════════════ -->
+<div id="page-start" class="page active">
+  <div class="start-inner">
+    <div class="mirror-frame">
+      <div class="corner c-tl"></div>
+      <div class="corner c-tr"></div>
+      <div class="corner c-bl"></div>
+      <div class="corner c-br"></div>
+
+      <span class="eyemark">◎</span>
+      <h1 class="site-title">恋爱镜像</h1>
+      <p class="site-sub">人格测试 · 光面与暗面</p>
+      <div class="divider"></div>
+
+      <p class="intro-text">
+        每个人在亲密关系中，都有一张明亮的脸，<br>
+        也有一张隐藏的面孔。<br>
+        30道题，映出你在爱里真实的样子——<br>
+        以及那些你还未正视过的部分。
+      </p>
+      <p class="intro-text" style="font-size:12.5px; opacity:0.62;">
+        没有好坏之分，只有真实。请凭第一感觉作答。
+      </p>
+
+      <div class="theory-tags">
+        <span class="theory-tag">依恋理论</span>
+        <span class="theory-tag">爱情三角理论</span>
+        <span class="theory-tag">五大人格</span>
+        <span class="theory-tag">戈特曼关系研究</span>
+        <span class="theory-tag">爱的五种语言</span>
+        <span class="theory-tag">客体关系理论</span>
+      </div>
+
+      <button class="btn-start" onclick="startQuiz()">开始测试</button>
+
+      <div class="start-meta">
+        <span>约 5 分钟</span>
+        <span>共 30 题</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="author-line">author: C</div>
+</div>
+
+<!-- ════════════════════════════════
+     QUIZ PAGE
+════════════════════════════════ -->
+<div id="page-quiz" class="page">
+  <div class="quiz-header">
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+    <span class="progress-num" id="progress-num">0 / 30</span>
+  </div>
+
+  <div class="quiz-body">
+    <div class="question-card" id="question-card"></div>
+    <div class="quiz-nav">
+      <button class="btn-back" id="btn-back" onclick="goBack()">
+        <span class="btn-back-arrow">←</span>
+        <span>上一题</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     RESULT PAGE
+════════════════════════════════ -->
+<div id="page-result" class="page">
+  <div class="result-header">
+    <div class="result-eyebrow">◎ 你的恋爱镜像</div>
+    <h2 class="result-title" id="result-heading"></h2>
+    <p class="result-sub">光面是你给予爱的方式，暗面是你需要正视的阴影</p>
+  </div>
+
+  <div id="capture-wrap">
+    <div class="capture-logo">
+      <div class="capture-logo-title">恋爱镜像</div>
+      <div class="capture-logo-sub">LOVE MIRROR · PERSONALITY TEST</div>
+    </div>
+    <div class="result-cards" id="result-cards"></div>
+  </div>
+
+  <div class="result-actions">
+    <button class="btn-save" onclick="saveImage()">保存结果为长图</button>
+    <button class="btn-restart" onclick="restartQuiz()">重新测试</button>
+  </div>
+</div>
+
+<div class="saving-overlay" id="saving-overlay">
+  <div class="saving-spin"></div>
+  <div class="saving-text">正在生成长图…</div>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+//  QUESTIONS
+// ════════════════════════════════════════════
+const questions = [
+  {
+    text: "伴侣临时取消了你们期待已久的约会，原因只是「不想出门了」，你会？",
+    options: [
+      { text: "表示理解，改天再约就好", s: {L1:2, L8:1} },
+      { text: "询问原因，看看有什么可以帮忙的", s: {L3:2, L2:1} },
+      { text: "直接告诉对方自己很失望", s: {L7:1, D5:1} },
+      { text: "开始反复想：他是不是不想见我了？", s: {D5:2, D3:1} }
+    ]
+  },
+  {
+    text: "你们吵了一架，冷战了两天，你更可能？",
+    options: [
+      { text: "主动打破僵局，提议坐下来好好谈", s: {L3:2, L2:1} },
+      { text: "等对方先开口，先开口就输了", s: {D7:1, D4:1} },
+      { text: "写一封很长的消息，把所有委屈说清楚", s: {D5:1, L4:1} },
+      { text: "让时间慢慢平复，一切会自然好转", s: {L1:2, D4:1} }
+    ]
+  },
+  {
+    text: "关于恋爱里的「个人空间」，你认为？",
+    options: [
+      { text: "很重要，爱情不等于黏在一起", s: {L5:2, L3:1} },
+      { text: "当然重要，但对方总是要空间会让我不安", s: {D5:2, D3:1} },
+      { text: "个人空间是借口，真爱不需要距离", s: {D3:2, D2:1} },
+      { text: "两个人自然会找到适合彼此的节奏", s: {L1:1, L8:2} }
+    ]
+  },
+  {
+    text: "你的伴侣生了一场大病需要照料，你会？",
+    options: [
+      { text: "毫不犹豫陪在身边，这是我最想做的事", s: {L2:2, L6:2} },
+      { text: "尽力帮忙，同时也照顾好自己", s: {L5:1, L3:1} },
+      { text: "心里很关心，但不太会表达，默默做实际的事", s: {L8:2, D1:1} },
+      { text: "坦白说有点难接受，感觉太沉重了", s: {D7:2, D1:2} }
+    ]
+  },
+  {
+    text: "朋友说你「在感情里总是付出太多」，你认为？",
+    options: [
+      { text: "也许是真的，但付出让我快乐", s: {L2:2, D5:1} },
+      { text: "我的付出是合理的，对方也有付出", s: {L3:1, L5:1} },
+      { text: "在乎的人才值得我全力付出", s: {L6:2, L2:1} },
+      { text: "不付出我会担心关系不稳定", s: {D5:2, D8:1} }
+    ]
+  },
+  {
+    text: "伴侣与异性友人关系很好，你会？",
+    options: [
+      { text: "保持信任，但不舒服时会直接说", s: {L3:2, L5:1} },
+      { text: "表面没事，心里默默记着每一次", s: {D3:1, D6:1} },
+      { text: "要求对方减少与那位朋友的联系", s: {D3:2, D2:1} },
+      { text: "完全不在意，我相信对方的判断", s: {L5:2, L1:1} }
+    ]
+  },
+  {
+    text: "你表达爱意最自然的方式是？",
+    options: [
+      { text: "用行动：帮对方解决问题、准备惊喜", s: {L2:1, L7:2} },
+      { text: "用语言：时常说出欣赏和爱意", s: {L4:2, L3:1} },
+      { text: "用陪伴：只要在一起做什么都好", s: {L8:2, L1:1} },
+      { text: "用承诺：用一致的行为证明可靠", s: {L6:2, L2:1} }
+    ]
+  },
+  {
+    text: "当你需要情感支持时，你倾向于？",
+    options: [
+      { text: "主动告诉对方我需要什么", s: {L3:2, L5:1} },
+      { text: "期待对方主动察觉和询问", s: {D5:1, D8:1} },
+      { text: "自己消化，不想给对方添麻烦", s: {D1:1, D4:1, L5:1} },
+      { text: "用间接方式暗示，希望对方懂", s: {D6:1, D5:1} }
+    ]
+  },
+  {
+    text: "在一段关系中，你最害怕遇到什么？",
+    options: [
+      { text: "被背叛或欺骗", s: {D5:1, L6:1} },
+      { text: "对方变得疏离或不再关心我", s: {D5:2, D3:1} },
+      { text: "关系陷入无聊的重复", s: {L7:1, D7:1} },
+      { text: "在感情里失去自我", s: {L5:2, L3:1} }
+    ]
+  },
+  {
+    text: "伴侣批评了你做的某件事，你的第一反应是？",
+    options: [
+      { text: "认真听，思考是否有道理", s: {L3:2, L1:1} },
+      { text: "先有情绪，但事后会反思", s: {L7:1, L4:1} },
+      { text: "感觉被攻击，需要先辩解", s: {D7:1, D2:1} },
+      { text: "表面接受，心里很难受", s: {D4:1, D5:1} }
+    ]
+  },
+  {
+    text: "你觉得「嫉妒」在恋爱里是？",
+    options: [
+      { text: "正常的，适当的嫉妒说明在乎", s: {D3:1, L6:1} },
+      { text: "不健康的，信任才是关系的基础", s: {L3:2, L5:1} },
+      { text: "我嫉妒心很强，自己也控制不了", s: {D3:2, D5:1} },
+      { text: "我很少嫉妒，因为我比较独立", s: {L5:2, D1:1} }
+    ]
+  },
+  {
+    text: "关于「分手后做朋友」，你的看法是？",
+    options: [
+      { text: "可能的，如果双方都成熟处理", s: {L3:2, L1:1} },
+      { text: "很难，因为感情很难完全放下", s: {D5:1, L4:1} },
+      { text: "不行，分了就是陌生人", s: {D3:1, D7:1} },
+      { text: "不需要刻意，顺其自然就好", s: {L5:1, L8:1} }
+    ]
+  },
+  {
+    text: "如果你发现自己对某段关系不再有感觉？",
+    options: [
+      { text: "诚实地和对方谈，提出分手", s: {L3:2, L5:2} },
+      { text: "先努力尝试挽救这段关系", s: {L2:1, L6:1} },
+      { text: "拖着，因为不知道怎么开口", s: {D4:2, D6:1} },
+      { text: "可能暗中开始寻找新的可能", s: {D6:2, D1:1} }
+    ]
+  },
+  {
+    text: "在你过去的恋爱里，你通常是？",
+    options: [
+      { text: "比较主动付出、关心的那一方", s: {L2:2, L4:1} },
+      { text: "双方比较平衡", s: {L3:1, L5:1} },
+      { text: "比较依赖、被照顾的那一方", s: {D5:2, D8:1} },
+      { text: "视情况而定，随关系发展变化", s: {L1:1, L7:1} }
+    ]
+  },
+  {
+    text: "你理想中的关系节奏是？",
+    options: [
+      { text: "稳步发展，慢慢深入了解彼此", s: {L1:2, L8:1} },
+      { text: "快速燃烧，热烈的激情才是恋爱", s: {L7:2, D5:1} },
+      { text: "水到渠成，不刻意规划", s: {L5:1, L3:1} },
+      { text: "尽快确认关系，稳定才有安全感", s: {D5:2, D3:1} }
+    ]
+  },
+  {
+    text: "伴侣心情不好，却说「没事，别问了」，你会？",
+    options: [
+      { text: "尊重对方的空间，等他/她准备好", s: {L1:2, L5:1} },
+      { text: "持续关心，直到对方愿意说", s: {L2:1, D5:1} },
+      { text: "有点受伤，觉得自己被推开了", s: {D5:2, D3:1} },
+      { text: "直说：「你不告诉我，我也没办法帮你」", s: {L3:2, D2:1} }
+    ]
+  },
+  {
+    text: "你觉得一段好的关系里，「争吵」应该是？",
+    options: [
+      { text: "越少越好，和谐才是真爱", s: {L8:1, D4:1} },
+      { text: "可以有，但要控制情绪和方式", s: {L3:2, L1:1} },
+      { text: "很正常，吵完更了解彼此", s: {L7:1, L4:1} },
+      { text: "有时候我用争吵来确认对方真的在乎我", s: {D8:2, D5:2} }
+    ]
+  },
+  {
+    text: "当你特别想念对方时，你会？",
+    options: [
+      { text: "直接告诉对方，或者直接去找他/她", s: {L4:2, L7:1} },
+      { text: "发消息，但不想显得太黏人", s: {L8:1, D5:1} },
+      { text: "忍着，让思念沉淀成动力", s: {D4:1, L5:1} },
+      { text: "刷他/她的社交媒体，反复看过去的聊天记录", s: {D5:2, D3:1} }
+    ]
+  },
+  {
+    text: "关于「把伴侣放在第一位」，你认为？",
+    options: [
+      { text: "当然，爱就是无条件的优先", s: {L2:2, D5:1} },
+      { text: "大部分时候是，但不能忽视自己的需求", s: {L5:1, L3:2} },
+      { text: "取决于具体情况，不能一概而论", s: {L1:1, L3:1} },
+      { text: "我希望对方把我放第一，我也这样对他/她", s: {D3:1, D8:1} }
+    ]
+  },
+  {
+    text: "如果你的伴侣在某方面做得比你好，你会感到？",
+    options: [
+      { text: "骄傲，我喜欢有能力的伴侣", s: {L4:1, L5:1} },
+      { text: "开心，会向他/她学习", s: {L3:2, L2:1} },
+      { text: "有点不安，担心自己配不上", s: {D5:2} },
+      { text: "心里不舒服，有一种无名的压力", s: {D7:1, D2:1} }
+    ]
+  },
+  {
+    text: "你曾经用什么方式挽回过一段关系？",
+    options: [
+      { text: "真诚的沟通和自我反思", s: {L3:2, L2:1} },
+      { text: "改变自己去迎合对方", s: {D5:2, L2:1} },
+      { text: "用愧疚感让对方回来", s: {D8:2, D6:2} },
+      { text: "我一般不挽回，放手就放手", s: {L5:2, D1:1} }
+    ]
+  },
+  {
+    text: "关于恋爱中的「秘密」，你的看法是？",
+    options: [
+      { text: "每个人都有隐私，不必什么都说", s: {L5:2, L3:1} },
+      { text: "信任的基础是透明，不该有秘密", s: {L6:1, D3:1} },
+      { text: "某些事不说是为了保护对方", s: {D6:1, D1:1} },
+      { text: "如果我有秘密会很有罪恶感", s: {L2:1, L4:1} }
+    ]
+  },
+  {
+    text: "面对感情里的不确定性，你倾向于？",
+    options: [
+      { text: "坦然接受，感情本来就不是100%确定的", s: {L5:2, L1:1} },
+      { text: "很不安，需要对方反复确认", s: {D5:2, D8:1} },
+      { text: "主动推进关系，让一切明朗化", s: {L6:1, D3:1} },
+      { text: "用其他方式分散注意力，暂时不去想", s: {D4:2, D1:1} }
+    ]
+  },
+  {
+    text: "如果你爱的人做了一件你觉得很愚蠢的事，你会？",
+    options: [
+      { text: "私下告诉他/她我的想法", s: {L3:2, L1:1} },
+      { text: "先帮他/她收拾残局，再说", s: {L2:2, L8:1} },
+      { text: "当场指出，有时说话比较用力", s: {D2:1, L7:1} },
+      { text: "心里有一种「我怎么会爱上这种人」的感觉", s: {D2:2, D7:2} }
+    ]
+  },
+  {
+    text: "你在什么时候感到在感情里最有安全感？",
+    options: [
+      { text: "当对方不问我的行踪和朋友圈时", s: {L5:2, D1:1} },
+      { text: "当我们约定好彼此的边界和期待时", s: {L3:2, L6:1} },
+      { text: "当对方随时都在，随时响应我时", s: {D5:2, D3:1} },
+      { text: "当我们能分享彼此最脆弱的部分时", s: {L4:2, L8:1} }
+    ]
+  },
+  {
+    text: "当一段关系让你很痛苦，但你还爱着对方，你会？",
+    options: [
+      { text: "认真评估这段关系是否值得继续", s: {L3:2, L5:1} },
+      { text: "继续撑着，爱一个人就要接受他的一切", s: {L2:1, D5:1} },
+      { text: "把痛苦当成「爱」的证明，苦涩也有一种浪漫", s: {D5:2, L4:1} },
+      { text: "开始筑起心墙，不再全心投入", s: {D4:2, D1:2} }
+    ]
+  },
+  {
+    text: "关于「主导权」，你在感情里通常是？",
+    options: [
+      { text: "喜欢有主导权，这让我有安全感", s: {D3:1, D7:1} },
+      { text: "不在乎谁主导，顺其自然", s: {L1:2, L8:1} },
+      { text: "有时强势，有时退让，看情况", s: {L3:1, L5:1} },
+      { text: "更希望对方来引领，我负责支持", s: {L2:1, D5:1} }
+    ]
+  },
+  {
+    text: "你最受不了伴侣的哪种行为？",
+    options: [
+      { text: "对我冷漠、心不在焉", s: {D5:1, L4:1} },
+      { text: "总是不承认自己的错误", s: {L3:1, D7:1} },
+      { text: "过度依赖我，让我喘不过气", s: {L5:2, D1:1} },
+      { text: "说话很刻薄，经常伤到我", s: {L8:1, D2:1} }
+    ]
+  },
+  {
+    text: "你觉得自己在感情里的「弱点」是？",
+    options: [
+      { text: "太容易原谅对方", s: {L1:2, L2:1} },
+      { text: "太容易嫉妒", s: {D3:2, D5:1} },
+      { text: "太需要对方的认可", s: {D5:2, D8:1} },
+      { text: "太容易逃避问题", s: {D4:2, D1:1} }
+    ]
+  },
+  {
+    text: "如果可以选择，你更希望在感情里扮演的角色是？",
+    options: [
+      { text: "那个给对方安全感和力量的人", s: {L6:2, L1:1} },
+      { text: "那个创造浪漫和惊喜的人", s: {L7:2, L4:1} },
+      { text: "那个能深度沟通、真正理解彼此的人", s: {L3:2, L8:1} },
+      { text: "那个默默陪伴、无需言语的人", s: {L8:2, L1:1} }
+    ]
+  }
+];
+
+// ════════════════════════════════════════════
+//  TYPE DEFINITIONS
+// ════════════════════════════════════════════
+const lightTypes = {
+  L1: {
+    name:"耐心包容型", tagline:"深水静流，岁月里才越来越闪光", icon:"🌿",
+    desc:"你像一片宁静的深水，在感情里有着令人安心的稳定感。你能接受伴侣的缺陷，不轻易被情绪左右，是关系里的「压舱石」。你的爱是耐磨的、长久的，在最平凡的日子里静静发光。",
+    advice:"注意不要把「包容」变成默许有害行为。设立健康边界不等于不爱对方，而是尊重自己。你的温柔是力量，但也需要被保护。",
+    entangle:"容易与情感勒索型、情感受虐狂产生深度纠葛——你的无限耐心可能被误读为「无论如何都不会离开」，从而被持续消耗。",
+    pattern:"倾向于进入稳定但有时缺乏激情的长期关系，或成为关系中付出更多、却很少被看见的那一方。"
+  },
+  L2: {
+    name:"勇于奉献型", tagline:"凌晨三点，我会出现在你门口", icon:"🕯️",
+    desc:"你愿意为爱全力以赴，对方的需求在你心里占有极重的分量。你的爱热烈而真诚，是那种会在最难的时刻出现的人。你不害怕付出，甚至享受在给予中感受到的满足感。",
+    advice:"付出需要建立在自我价值感充足的基础上。检视自己的给予是否得到了对等的回应，而不是单方面的消耗。爱自己，才能真正爱好别人。",
+    entangle:"容易与自我中心型产生纠葛——你的无私会养大对方的自我，最终在失望中受伤；也可能被操控利用型盯上。",
+    pattern:"倾向于进入不对等的关系，「付出者与索取者」的结构会在某一天突然让你精疲力竭，难以为继。"
+  },
+  L3: {
+    name:"理性沟通型", tagline:"所有问题都可以坐下来谈清楚", icon:"💬",
+    desc:"你用智识和逻辑来管理情感，不容易在关系里失控。你重视对话、边界和清晰的期待，认为大多数问题都是可以被谈清楚的。你的伴侣可以依赖你的冷静和判断力。",
+    advice:"情感有时候不需要被分析，只需要被感受和接纳。注意不要让理性成为你回避脆弱的壳——展示软弱，是亲密关系最珍贵的邀请。",
+    entangle:"容易与情感漠视型产生纠葛，误以为对方「只是需要更多空间」，却不知道对方其实在情感上已经关门了。",
+    pattern:"倾向于建立清晰平等的关系，但有时会与情感型伴侣产生「你要沟通、他要空间」的长期拉锯。"
+  },
+  L4: {
+    name:"浪漫治愈型", tagline:"我能感受到你没说出口的一切", icon:"🌸",
+    desc:"你对情感极度敏感，能深深共情伴侣的喜怒哀乐。你把爱变成一首诗，有能力疗愈伴侣，也擅长创造珍贵的情感记忆。你的存在本身，就是一种温暖。",
+    advice:"过度共情会让你忽视自己的感受。保护好自己的情感边界，不要让这段关系成为你情绪的唯一出口——你也需要被疗愈。",
+    entangle:"容易与情感漠视型产生纠葛，误以为自己能「感化」冷漠的对方，结果在反复尝试中耗尽自己。",
+    pattern:"倾向于进入深度共生的关系，或被不善表达的伴侣慢慢「情感消耗」，直到再也挤不出一滴温柔。"
+  },
+  L5: {
+    name:"独立自主型", tagline:"我爱你，也爱我自己", icon:"🌙",
+    desc:"你把自我与关系分得很清楚，不依赖伴侣来完成自己的人生。你有清晰的边界感，不会为了爱情迷失自我。这让你成为一个充实、有趣、有底气的伴侣。",
+    advice:"适当展示脆弱，是亲密关系的重要养料。过度的独立有时会让伴侣感到被排斥或不被需要——连接需要你愿意被看见。",
+    entangle:"容易与情感受虐狂产生持续冲突——对方把你的疏离误读成「深沉」，反而越陷越深；也容易与控制占有型在边界上起冲突。",
+    pattern:"倾向于建立「两个太阳」式的平行关系，充满尊重，但也可能因为过于平行而缺乏深度的情感连接。"
+  },
+  L6: {
+    name:"忠诚守护型", tagline:"我选择了你，就不会轻易放手", icon:"🛡️",
+    desc:"你的爱是一种郑重的承诺，你认真对待每一段感情，不轻易离开。你愿意在关系里保持稳定，为伴侣提供可靠的安全感，是那种让人觉得「有他/她真的很踏实」的人。",
+    advice:"忠诚是美德，但要分辨自己是在守护真正值得守护的关系。有时候，离开才是对自己最大的忠诚。",
+    entangle:"容易与情感虐待型陷入「我相信他/她会改变」的深渊，忠诚变成了困住自己的牢笼。",
+    pattern:"倾向于进入长期稳定的关系，有时过于执着于「维持」，即使关系已经对自己造成了伤害。"
+  },
+  L7: {
+    name:"激情创造型", tagline:"爱就要爱出一个传奇", icon:"🔥",
+    desc:"你把感情变成一场探险，爱得热烈，活得鲜活。你带给关系的是源源不断的惊喜和生命力，你的存在让平淡变得波澜，让日子有了值得回忆的温度。",
+    advice:"情绪的高强度可能让伴侣感到难以承受。学会在激情与稳定之间找到平衡——关系不只靠燃烧，也靠持续的微光。",
+    entangle:"容易与控制占有型产生纠葛——你充满活力的社交让对方嫉妒心爆发，爱与控制混在一起，最终窒息。",
+    pattern:"倾向于进入激情但不稳定的关系，容易在高燃后遭遇「空白期」的不适应，对平淡感到恐慌。"
+  },
+  L8: {
+    name:"温柔陪伴型", tagline:"只要你在，就已足够", icon:"☕",
+    desc:"你的爱是细水长流的，是日常里的一杯热茶、一句「你辛苦了」。你不需要轰轰烈烈，只需要彼此都在。你的温柔如同一片光，安静却真实。",
+    advice:"温柔是力量，但有时候也需要主动说出自己的期待。别把沉默当成成熟——伴侣需要知道你真正的感受，才能靠近你。",
+    entangle:"容易与自我中心型产生纠葛——你的温柔容易被对方视为理所当然，你的沉默会被误读为「没有需求」。",
+    pattern:"倾向于进入平静舒适但可能缺乏成长的关系，习惯了「以平和代替改变」，逐渐在对方眼里变得透明。"
+  }
+};
+
+const darkTypes = {
+  D1: {
+    name:"情感漠视型", tagline:"不是冷漠，是不知道怎么在场", icon:"🧊",
+    desc:"你的暗面是一种无形的冷——不是出于恶意，而是习惯性地关闭情感通道。你可能完全意识不到自己的疏离已经让身边的人一次次失落。这通常源于成长中情感表达被压制的经历。",
+    advice:"情感漠视不等于强大，它是一种防御机制。尝试每天练习说出「我在意你今天的感受」——即使感觉很奇怪，也要说出口。",
+    entangle:"容易吸引浪漫治愈型和情感受虐狂，他们误以为能「解冻」你，在反复尝试中两败俱伤。",
+    pattern:"倾向于进入「伴侣不断追求，你不断后退」的关系，在对方终于耗尽耐心时，你才发现已经失去了什么。"
+  },
+  D2: {
+    name:"情感虐待型", tagline:"你的愤怒在伤害你最爱的人", icon:"⚡",
+    desc:"你的暗面有时会以语言或行为伤害最亲近的人——嘲讽、贬低、或难以控制的愤怒爆发。这往往来自你自己深层的创伤和无助感，是内心痛苦寻找出口的方式。",
+    advice:"这是一个需要认真对待的模式。寻求心理咨询能帮你理解愤怒的根源，在它破坏关系之前找到更健康的出口。你值得被帮助。",
+    entangle:"容易与忠诚守护型产生长期纠葛——对方「我相信你会好」的信念会让双方都陷入有害的循环，难以自拔。",
+    pattern:"倾向于进入「施虐—道歉—蜜月—再施虐」的循环关系，在每次爆发后充满悔意，却一再重演。"
+  },
+  D3: {
+    name:"控制占有型", tagline:"爱你，所以要把你的世界都装进我的手里", icon:"🔒",
+    desc:"你对关系有强烈的掌控欲，把伴侣视为「属于自己的」。这通常来自深层的不安全感，但表现出来却是限制对方的自由——查手机、设规矩、记仇。",
+    advice:"真正的爱是给对方足够的空间成为自己。控制无法带来安全感，只会让对方越来越远、越来越沉默。你的不安需要被正视，而不是转嫁给对方。",
+    entangle:"容易与情感受虐狂短暂共鸣（控制欲契合了对方对「被需要的痛苦」的渴望），或与激情创造型因爱生恨，变成一场消耗战。",
+    pattern:"倾向于进入高度纠缠的关系，或伴侣慢慢变得自我收缩，在沉默中逐渐消失。"
+  },
+  D4: {
+    name:"逃避回避型", tagline:"越靠近，我越想消失", icon:"🌫️",
+    desc:"一旦关系变得亲密、有负担或产生冲突，你会本能地退缩。你的暗面是对「被需要」的恐惧，用冷淡和距离来保护自己不被看穿，不被伤害。",
+    advice:"回避的本质是对亲密的恐惧。每当你想退缩时，试着问自己：我在保护什么？对方需要的是一个在场的伴侣。",
+    entangle:"容易与情感受虐狂形成经典的追逃关系——对方越追，你越逃，双方越来越痛苦，却都停不下来。",
+    pattern:"倾向于进入「一方渴望亲近、一方维持距离」的失衡关系，双方都精疲力竭，却找不到出口。"
+  },
+  D5: {
+    name:"情感受虐狂", tagline:"苦才是爱的证明，不是吗", icon:"🩸",
+    desc:"你的暗面是对痛苦的某种隐秘依赖——你会在不健康的关系里反复停留，被伤害了离开，却因为一点温柔又回去。你可能深信自己不配被好好爱待，或者把苦难当成感情深度的证明。「平静的关系」在你眼里往往显得无聊，只有痛苦才让你觉得「这是真的爱」。这往往根植于早年的创伤和习得性无助。",
+    advice:"你值得被温柔对待，不需要用痛苦来证明爱的真实。试着问自己：如果对方从未伤过我，我还会留下来吗？如果答案是否定的，也许是创伤让你把「上瘾」错认成了「爱」。",
+    entangle:"容易与情感虐待型形成创伤绑定——痛苦与偶尔的温柔交替出现，产生强烈的上瘾感。越被伤害，越难离开；也容易被逃避回避型吸引，把对方的冷漠解读成「深沉」。",
+    pattern:"倾向于进入「受伤—短暂和解—再次受伤」的循环，在伤害中寻找深度和意义，甚至对健康、平等的感情感到陌生和不安。"
+  },
+  D6: {
+    name:"操控利用型", tagline:"我只是知道怎么让事情朝我想要的方向走", icon:"🎭",
+    desc:"你的暗面是精于算计的关系策略——不一定出于恶意，但你习惯于用信息、情绪和时机来影响对方的行为，让关系按你的意图发展。这可能是生存本能，也可能是习得的应对模式。",
+    advice:"当你开始思考「这么说能让他/她…」时，停下来，尝试直接说出你真正的需求。直接比策略更有力量，也更值得被爱。",
+    entangle:"容易与自我中心型产生权力博弈，双方互相试探；或与勇于奉献型形成长期利用关系，对方付出，你收割。",
+    pattern:"倾向于进入复杂的权力关系，或伴侣慢慢感觉「哪里不对劲」却说不清楚，在模糊的不安中慢慢离开。"
+  },
+  D7: {
+    name:"自我中心型", tagline:"我以为我们都在以我为中心", icon:"🪞",
+    desc:"你的暗面是把自己的需求默认为关系的中心，对伴侣的感受有时反应迟钝甚至视而不见。这不是坏人，而是习惯了以自己的视角看世界，忘了还有另一个人在场。",
+    advice:"尝试每天问一个问题：「他/她今天怎么样？」然后真的倾听答案，而不是等着分享自己的事。被看见，是爱最原始的渴望。",
+    entangle:"容易与勇于奉献型形成长期「给予—索取」结构，或被浪漫治愈型深情打动，却始终无法给对方同等的回应。",
+    pattern:"倾向于进入伴侣越来越疲惫、越来越不被看见，最终选择沉默离开的关系。"
+  },
+  D8: {
+    name:"情感勒索型", tagline:"「你让我这么难过，你不应该对我好一点吗」", icon:"⛓️",
+    desc:"你的暗面是通过内疚、威胁或自我牺牲感来掌控关系走向。「我为了你牺牲了那么多」「你如果真的在乎我就会…」——这些话在你口中说得太自然，却是关系里无声的腐蚀剂。",
+    advice:"情感勒索往往来自对失去的深层恐惧。学会用「我需要…」代替「你让我…」，这是建立平等关系的第一步，也是真正被爱的前提。",
+    entangle:"容易与耐心包容型或勇于奉献型长期共存——对方的耐心让这种模式得以持续，但总有一天，耐心也会耗尽。",
+    pattern:"倾向于进入单边情感剥削的关系，伴侣长期处于内疚感和自我怀疑中，直到某天突然清醒，决然离去。"
+  }
+};
+
+// ════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════
+let currentQ = 0;
+let scores   = {};
+let answers  = [];  // stores selected option index per question
+
+const scoreKeys = ['L1','L2','L3','L4','L5','L6','L7','L8','D1','D2','D3','D4','D5','D6','D7','D8'];
+
+function resetState() {
+  scoreKeys.forEach(k => scores[k] = 0);
+  answers = new Array(questions.length).fill(null);
+  currentQ = 0;
+}
+
+// ════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function startQuiz() {
+  resetState();
+  showPage('page-quiz');
+  renderQuestion();
+}
+
+function restartQuiz() {
+  showPage('page-start');
+}
+
+// ════════════════════════════════════════════
+//  QUIZ RENDERING
+// ════════════════════════════════════════════
+function updateProgress() {
+  const pct = Math.round((currentQ / questions.length) * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-num').textContent  = currentQ + ' / ' + questions.length;
+
+  const backBtn = document.getElementById('btn-back');
+  backBtn.classList.toggle('visible', currentQ > 0);
+}
+
+function renderQuestion() {
+  updateProgress();
+
+  const q       = questions[currentQ];
+  const letters = ['A','B','C','D'];
+  const card    = document.getElementById('question-card');
+
+  card.innerHTML = `
+    <div class="question-num">Q${String(currentQ + 1).padStart(2,'0')}</div>
+    <div class="question-text">${q.text}</div>
+    <div class="options-list">
+      ${q.options.map((opt, i) => `
+        <button class="option-btn" onclick="selectOption(${i})">
+          <div class="option-inner">
+            <span class="option-letter">${letters[i]}</span>
+            <span>${opt.text}</span>
+          </div>
+        </button>
+      `).join('')}
+    </div>
+  `;
+}
+
+function selectOption(idx) {
+  // If re-answering a question (came back), subtract old scores first
+  if (answers[currentQ] !== null) {
+    const old = questions[currentQ].options[answers[currentQ]].s;
+    for (const [k, v] of Object.entries(old)) scores[k] = Math.max(0, scores[k] - v);
+  }
+
+  // Add new scores
+  const s = questions[currentQ].options[idx].s;
+  for (const [k, v] of Object.entries(s)) scores[k] = (scores[k] || 0) + v;
+  answers[currentQ] = idx;
+
+  // Visual flash
+  const btns = document.querySelectorAll('.option-btn');
+  btns.forEach(b => b.disabled = true);
+  btns[idx].classList.add('selected');
+
+  setTimeout(() => {
+    currentQ++;
+    if (currentQ >= questions.length) showResults();
+    else renderQuestion();
+  }, 360);
+}
+
+function goBack() {
+  if (currentQ === 0) return;
+  currentQ--;
+  renderQuestion();
+}
+
+// ════════════════════════════════════════════
+//  RESULTS
+// ════════════════════════════════════════════
+function getTopType(prefix) {
+  let best = null, bestVal = -1;
+  for (const k of scoreKeys) {
+    if (k.startsWith(prefix) && scores[k] > bestVal) { bestVal = scores[k]; best = k; }
+  }
+  return best;
+}
+
+function cardHTML(t, face, cls) {
+  return `
+    <div class="type-card ${cls}">
+      <div class="card-face">${face}</div>
+      <div class="type-icon">${t.icon}</div>
+      <div class="type-name">${t.name}</div>
+      <div class="type-tagline">${t.tagline}</div>
+      <div class="type-desc">${t.desc}</div>
+      <div class="insight-block">
+        <div class="insight-label">✦ 给你的建议</div>
+        <div class="insight-text">${t.advice}</div>
+      </div>
+      <div class="insight-block">
+        <div class="insight-label">⚠ 容易产生纠葛</div>
+        <div class="insight-text">${t.entangle}</div>
+      </div>
+      <div class="insight-block">
+        <div class="insight-label">◈ 关系模式</div>
+        <div class="insight-text">${t.pattern}</div>
+      </div>
+    </div>`;
+}
+
+function showResults() {
+  const lt = lightTypes[getTopType('L')];
+  const dt = darkTypes[getTopType('D')];
+
+  document.getElementById('result-heading').textContent = lt.name + '  ×  ' + dt.name;
+  document.getElementById('result-cards').innerHTML =
+    cardHTML(lt, '光面', 'light-card') + cardHTML(dt, '暗面', 'dark-card');
+
+  document.getElementById('progress-fill').style.width = '100%';
+  document.getElementById('progress-num').textContent  = '30 / 30';
+  showPage('page-result');
+}
+
+// ════════════════════════════════════════════
+//  SAVE AS IMAGE
+// ════════════════════════════════════════════
+async function saveImage() {
+  const overlay = document.getElementById('saving-overlay');
+  overlay.classList.add('active');
+  try {
+    const target = document.getElementById('capture-wrap');
+    const canvas = await html2canvas(target, {
+      backgroundColor: '#04000e',
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      windowWidth: Math.max(document.documentElement.scrollWidth, 900)
+    });
+    const link = document.createElement('a');
+    link.download = '恋爱镜像测试结果.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  } catch(e) {
+    alert('图片生成失败，请截图保存。');
+    console.error(e);
+  }
+  overlay.classList.remove('active');
+}
+</script>
+</body>
+</html>
